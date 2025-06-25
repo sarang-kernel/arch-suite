@@ -4,7 +4,7 @@
 // This is a pure-Rust application for managing Arch Linux systems.
 // It uses the `ratatui` library to create a professional and intuitive
 // terminal user interface. This version is fully self-contained and corrects
-// all previous compiler errors.
+// all previous compiler errors related to lifetimes and borrowing.
 
 // --- Crate Imports ---
 use anyhow::{Context, Result};
@@ -48,11 +48,11 @@ impl<T> StatefulList<T> {
     fn previous(&mut self) { let i = self.state.selected().map_or(0, |i| if i == 0 { self.items.len() - 1 } else { i - 1 }); self.state.select(Some(i)); }
 }
 
-// FIX: Define a type alias for our async action function pointers.
-// This makes the MenuItem struct cleaner. It's a function that takes a mutable App
-// and returns a Future that resolves to a Result.
-type AppAction<'a> = Pin<Box<dyn Future<Output = Result<()>> + 'a>>;
-type ActionFn = for<'a> fn(&'a mut App<'a>) -> AppAction<'a>;
+// FIX: The action function no longer takes a mutable reference to App.
+// Instead, it's a self-contained unit of work that returns a String result.
+// This is the key to solving the borrow checker errors.
+type AppAction = Pin<Box<dyn Future<Output = Result<String>>>>;
+type ActionFn = fn() -> AppAction;
 
 struct MenuItem<'a> {
     icon: &'a str,
@@ -77,10 +77,10 @@ impl<'a> App<'a> {
             should_quit: false,
             main_menu: StatefulList::with_items(vec![
                 MenuItem { icon: "[R]", text: "Replicator (Recommended)", help: "Captures the 'recipe' for your system (packages, configs) into a single file. Use this to perform a clean, fresh installation on new hardware that perfectly matches your setup.", action: action_create_snapshot },
-                MenuItem { icon: "[C]", text: "Cloner (Advanced)", help: "Creates a direct, 1:1 bootable ISO image of your current system's disk. This is best for creating a full backup or moving your exact OS to identical hardware.", action: |_| Box::pin(async { Ok(()) }) },
-                MenuItem { icon: "[U]", text: "Utilities & Manual Tools", help: "A collection of essential tools for system maintenance, including a hardware inspector, USB flasher, and manual installation steps.", action: |_| Box::pin(async { Ok(()) }) },
-                MenuItem { icon: "[H]", text: "Main Help", help: "Displays the main, scrollable help manual for the entire application.", action: |app| Box::pin(async { app.current_view = AppView::HelpManual; Ok(()) }) },
-                MenuItem { icon: "[Q]", text: "Quit", help: "Exits the Arch System Suite application.", action: |app| Box::pin(async { app.should_quit = true; Ok(()) }) },
+                MenuItem { icon: "[C]", text: "Cloner (Advanced)", help: "Creates a direct, 1:1 bootable ISO image of your current system's disk. This is best for creating a full backup or moving your exact OS to identical hardware.", action: || Box::pin(async { Ok("Cloner not yet implemented.".to_string()) }) },
+                MenuItem { icon: "[U]", text: "Utilities & Manual Tools", help: "A collection of essential tools for system maintenance, including a hardware inspector, USB flasher, and manual installation steps.", action: || Box::pin(async { Ok("Utilities not yet implemented.".to_string()) }) },
+                MenuItem { icon: "[H]", text: "Main Help", help: "Displays the main, scrollable help manual for the entire application.", action: || Box::pin(async { Err(anyhow::anyhow!("help")) }) }, // Special case
+                MenuItem { icon: "[Q]", text: "Quit", help: "Exits the Arch System Suite application.", action: || Box::pin(async { Err(anyhow::anyhow!("quit")) }) }, // Special case
             ]),
             action_popup_text: String::new(),
         }
@@ -127,12 +127,7 @@ async fn handle_input(key_code: KeyCode, app: &mut App<'_>) -> Result<()> {
     }
     match app.current_view {
         AppView::MainMenu => handle_main_menu_input(key_code, app).await?,
-        AppView::HelpManual => {
-            if key_code == KeyCode::Char('q') || key_code == KeyCode::Esc {
-                app.current_view = AppView::MainMenu;
-            }
-        }
-        AppView::ActionPopup => {
+        AppView::HelpManual | AppView::ActionPopup => {
             app.current_view = AppView::MainMenu;
         }
     }
@@ -147,9 +142,27 @@ async fn handle_main_menu_input(key_code: KeyCode, app: &mut App<'_>) -> Result<
         KeyCode::Enter => {
             if let Some(selected) = app.main_menu.state.selected() {
                 let action = app.main_menu.items[selected].action;
-                if let Err(e) = action(app).await {
-                    app.action_popup_text = format!("Error: {}", e);
-                    app.current_view = AppView::ActionPopup;
+                
+                // FIX: The action is called, and its result is awaited.
+                // The borrow of `app` for the action is contained within the `action()` call.
+                match action().await {
+                    Ok(message) => {
+                        // AFTER the await, we can now safely mutate `app`.
+                        app.action_popup_text = message;
+                        app.current_view = AppView::ActionPopup;
+                    }
+                    Err(e) => {
+                        // Handle special "quit" and "help" signals.
+                        let msg = e.to_string();
+                        if msg == "quit" {
+                            app.should_quit = true;
+                        } else if msg == "help" {
+                            app.current_view = AppView::HelpManual;
+                        } else {
+                            app.action_popup_text = format!("Error: {}", e);
+                            app.current_view = AppView::ActionPopup;
+                        }
+                    }
                 }
             }
         }
@@ -160,9 +173,8 @@ async fn handle_main_menu_input(key_code: KeyCode, app: &mut App<'_>) -> Result<
 
 // --- Core Logic Functions ---
 
-// FIX: This function is now async and returns a Future.
-fn action_create_snapshot(app: &mut App) -> AppAction {
-    Box::pin(async move {
+fn action_create_snapshot() -> AppAction {
+    Box::pin(async {
         let home_dir = std::env::var("HOME").context("Failed to get HOME directory")?;
         let work_dir = format!("{}/arch-suite-work", home_dir);
         let snapshot_dir = format!("{}/snapshot_tmp", work_dir);
@@ -187,13 +199,10 @@ fn action_create_snapshot(app: &mut App) -> AppAction {
         let output = Command::new("sh").arg("-c").arg(command_script).output().await?;
 
         if output.status.success() {
-            app.action_popup_text = format!("✅ Snapshot created successfully:\n{}", snapshot_file);
+            Ok(format!("✅ Snapshot created successfully:\n{}", snapshot_file))
         } else {
-            app.action_popup_text = format!("❌ Failed to create snapshot:\n{}", String::from_utf8_lossy(&output.stderr));
+            Err(anyhow::anyhow!("Failed to create snapshot:\n{}", String::from_utf8_lossy(&output.stderr)))
         }
-        
-        app.current_view = AppView::ActionPopup;
-        Ok(())
     })
 }
 

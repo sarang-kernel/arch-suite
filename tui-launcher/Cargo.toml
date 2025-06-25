@@ -5,7 +5,7 @@
 # The name of our binary and crate.
 name = "arch-suite"
 # The version number, which should match the one in the PKGBUILD.
-version = "3.1.0"
+version = "2.1.2"
 # The Rust edition to use. "2021" is the latest stable edition.
 edition = "2021"
 # Your author information.
