@@ -4,7 +4,7 @@
 
 # --- Package Metadata ---
 pkgname=arch-suite
-pkgver=2.1.2
+pkgver=3.0.1
 pkgrel=1
 pkgdesc="An intuitive, TUI-driven suite to replicate, clone, and manage Arch Linux systems."
 arch=('x86_64')

@@ -5,7 +5,7 @@
 # The name of our binary and crate.
 name = "arch-suite"
 # The version number, which should match the one in the PKGBUILD.
-version = "2.1.2"
+version = "3.1.0"
 # The Rust edition to use. "2021" is the latest stable edition.
 edition = "2021"
 # Your author information.
@@ -38,3 +38,5 @@ textwrap = "0.16.0"
 tokio = { version = "1", features = ["full"] }
 
 chrono = "0.4"
+
+# NEW : A helper crate for managing text input state
