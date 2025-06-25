@@ -36,3 +36,5 @@ textwrap = "0.16.0"
 # long-running system commands (like pacman or dd) in the background
 # without freezing the user interface.
 tokio = { version = "1", features = ["full"] }
+
+chrono = "0.4"
