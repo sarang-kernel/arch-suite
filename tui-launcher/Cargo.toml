@@ -1,0 +1,9 @@
+[package]
+name = "tui-launcher"
+version = "1.5.0"
+edition = "2021"
+authors = ["Sarang Vehale sarang.kernel@gmail.com"]
+description = "A beautiful TUI launcher for the Arch System Suite."
+
+[dependencies]
+crossterm = "0.27"
