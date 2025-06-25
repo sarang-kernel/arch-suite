@@ -1,38 +1,60 @@
-# Maintainer: Sarang Vehale sarang-kernel@gmail.com
+# Maintainer: Sarang Vehale sarang.kernel@gmail.com
+# This is the package build script for the Arch User Repository (AUR).
+# It defines metadata, dependencies, and build/installation steps.
+
+# --- Package Metadata ---
 pkgname=arch-suite
-pkgver=2.1.0
+pkgver=3.1.0
 pkgrel=1
 pkgdesc="An intuitive, TUI-driven suite to replicate, clone, and manage Arch Linux systems."
 arch=('x86_64')
-url="https://github.com/sarang-kernel/arch-suite.git"
+url="https://github.com/sarang-kernel/arch-suite.git" 
 license=('MIT')
-# These are now the RUNTIME dependencies for the binary.
-depends=(
-    'bash' # Still needed to run commands in chroot
-    'gum'  # Still the easiest way to get user input inside command logic
-    'arch-install-scripts'
-    'pacman-contrib'
-    'gptfdisk'
-    'dosfstools'
-    'e2fsprogs'
-    'archiso'
-    'rsync'
-    'pciutils'
-)
-makedepends=('rust' 'cargo')
-source=("$pkgname-$pkgver::git+file://$PWD")
-sha256sums=('SKIP')
 
+# --- Dependencies ---
+# 'depends' lists packages required for the application to RUN.
+# The Rust binary will call these system commands.
+depends=(
+    'bash'                 # Required for running commands inside chroot environments
+    'gum'                  # Used for simple, interactive prompts (e.g., getting a username)
+    'arch-install-scripts' # Provides 'pacstrap' and 'genfstab'
+    'pacman-contrib'       # Provides tools like 'pactree' (useful for dependency analysis)
+    'gptfdisk'             # Provides 'sgdisk' for partitioning
+    'dosfstools'           # Provides 'mkfs.fat' for the EFI partition
+    'e2fsprogs'            # Provides 'mkfs.ext4' for the root partition
+    'archiso'              # Provides 'mkarchiso' for the Cloner module
+    'rsync'                # Used by the Cloner module to copy files
+    'pciutils'             # Provides 'lspci' for hardware detection
+)
+# 'makedepends' lists packages required only to BUILD the application.
+makedepends=('rust' 'cargo')
+
+# --- Source Location ---
+# This tells makepkg to use the local git repository as the source.
+# For a real AUR submission, this would be a git URL.
+source=("$pkgname-$pkgver::git+file://$PWD")
+sha256sums=('SKIP') # 'SKIP' is standard for VCS sources like git.
+
+# --- Build Logic ---
+# This function is run by makepkg to compile the source code.
 build() {
+    # Navigate into the source directory created by makepkg.
     cd "$srcdir/$pkgname-$pkgver"
-    # No environment variables needed anymore.
+    
+    # Compile the Rust project in release mode for performance.
+    # --locked ensures that the Cargo.lock file is used, for reproducible builds.
     cargo build --release --locked
 }
 
+# --- Installation Logic ---
+# This function is run by makepkg to install the built files into a temporary package directory.
 package() {
-    # Install the single compiled Rust binary.
+    # Install the single compiled Rust binary to /usr/bin.
+    # -D creates parent directories if they don't exist.
+    # -m755 sets the file permissions to be executable.
     install -Dm755 "$srcdir/$pkgname-$pkgver/target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
     
-    # Install the license file.
+    # Install the license file to the standard location.
+    # -m644 sets the file permissions to be readable by all.
     install -Dm644 "$srcdir/$pkgname-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

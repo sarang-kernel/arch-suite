@@ -1,9 +1,38 @@
-[package]
-name = "tui-launcher"
-version = "1.5.0"
-edition = "2021"
-authors = ["Sarang Vehale sarang.kernel@gmail.com"]
-description = "A beautiful TUI launcher for the Arch System Suite."
+# This is the manifest file for the Rust package manager, Cargo.
+# It contains metadata and dependencies for our Rust project.
 
+[package]
+# The name of our binary and crate.
+name = "arch-suite"
+# The version number, which should match the one in the PKGBUILD.
+version = "3.1.0"
+# The Rust edition to use. "2021" is the latest stable edition.
+edition = "2021"
+# Your author information.
+authors = ["Sarang Vehale sarang.kernel@gmail.com"]
+# A brief description of the package.
+description = "An intuitive, TUI-driven suite to replicate, clone, and manage Arch Linux systems."
+
+# The [dependencies] section lists all the external Rust libraries (crates)
+# our project depends on. Cargo will automatically download and compile them.
 [dependencies]
-crossterm = "0.27"
+# The core TUI library for drawing widgets and managing layouts.
+# We enable the "all-widgets" feature to get access to everything it offers.
+ratatui = { version = "0.24.0", features = ["all-widgets"] }
+
+# The low-level library for controlling the terminal (moving the cursor,
+# enabling raw mode, reading key events, etc.). Ratatui uses this as its backend.
+crossterm = "0.27.0"
+
+# A powerful library for robust error handling. It allows us to use `?`
+# on different error types and provides context to errors.
+anyhow = "1.0"
+
+# A crate for wrapping text to fit within a specific width, which is
+# essential for displaying help text in pop-up windows cleanly.
+textwrap = "0.16.0"
+
+# Tokio is the standard asynchronous runtime for Rust. We need it to run
+# long-running system commands (like pacman or dd) in the background
+# without freezing the user interface.
+tokio = { version = "1", features = ["full"] }
