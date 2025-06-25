@@ -37,6 +37,10 @@ textwrap = "0.16.0"
 # without freezing the user interface.
 tokio = { version = "1", features = ["full"] }
 
+# A crate for getting the current date and time, used for generating
+# unique filenames for snapshots and backups.
 chrono = "0.4"
 
-# NEW : A helper crate for managing text input state
+# A helper crate for managing the state of a text input field, including
+# cursor position, character insertion/deletion, and scrolling.
+tui-input = "0.8.0"
