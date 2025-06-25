@@ -1,0 +1,1 @@
+/home/sarang/Development/scripts/arch-clone/arch-suite-aur/src/arch-suite-1.5.0/tui-launcher/target/release/tui-launcher: /home/sarang/Development/scripts/arch-clone/arch-suite-aur/src/arch-suite-1.5.0/tui-launcher/src/main.rs

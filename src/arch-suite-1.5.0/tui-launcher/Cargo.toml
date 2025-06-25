@@ -1,0 +1,11 @@
+[package]
+name = "arch-suite"
+version = "2.1.0"
+edition = "2021"
+authors = ["Sarang Vehale sarang-kernel@gmail.com"]
+description = "An intuitive, TUI-driven suite to replicate, clone, and manage Arch Linux systems."
+
+[dependencies]
+ratatui = { version = "0.24.0", features = ["all-widgets"] }
+crossterm = "0.27.0"
+textwrap = "0.16.0"
