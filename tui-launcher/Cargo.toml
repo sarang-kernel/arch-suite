@@ -1,46 +1,18 @@
-# This is the manifest file for the Rust package manager, Cargo.
-# It contains metadata and dependencies for our Rust project.
-
 [package]
-# The name of our binary and crate.
 name = "arch-suite"
-# The version number, which should match the one in the PKGBUILD.
-version = "3.1.0"
-# The Rust edition to use. "2021" is the latest stable edition.
+version = "4.0.0"
 edition = "2021"
-# Your author information.
-authors = ["Sarang Vehale sarang.kernel@gmail.com"]
-# A brief description of the package.
-description = "An intuitive, TUI-driven suite to replicate, clone, and manage Arch Linux systems."
+authors = ["Your Name <you@example.com>"]
+description = "A professional, TUI-driven suite to replicate, clone, and manage Arch Linux systems."
 
-# The [dependencies] section lists all the external Rust libraries (crates)
-# our project depends on. Cargo will automatically download and compile them.
 [dependencies]
-# The core TUI library for drawing widgets and managing layouts.
-# We enable the "all-widgets" feature to get access to everything it offers.
 ratatui = { version = "0.24.0", features = ["all-widgets"] }
-
-# The low-level library for controlling the terminal (moving the cursor,
-# enabling raw mode, reading key events, etc.). Ratatui uses this as its backend.
 crossterm = "0.27.0"
-
-# A powerful library for robust error handling. It allows us to use `?`
-# on different error types and provides context to errors.
-anyhow = "1.0"
-
-# A crate for wrapping text to fit within a specific width, which is
-# essential for displaying help text in pop-up windows cleanly.
 textwrap = "0.16.0"
-
-# Tokio is the standard asynchronous runtime for Rust. We need it to run
-# long-running system commands (like pacman or dd) in the background
-# without freezing the user interface.
 tokio = { version = "1", features = ["full"] }
-
-# A crate for getting the current date and time, used for generating
-# unique filenames for snapshots and backups.
+anyhow = "1.0"
 chrono = "0.4"
-
-# A helper crate for managing the state of a text input field, including
-# cursor position, character insertion/deletion, and scrolling.
 tui-input = "0.8.0"
+# For parsing lsblk output
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
